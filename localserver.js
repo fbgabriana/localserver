@@ -26,6 +26,10 @@ const server = http.createServer(async (req, res) => {
 					res.writeHead(200, {"Content-Type": mimetype});
 					res.write(content);
 					res.end();
+				}).catch(err => {
+					res.writeHead(200, {"Content-Type": "text/html"});
+					res.write(`${err.message}`);
+					res.end();
 				});
 			} else {
 				fs.readDir(req.path).then(files => {
@@ -91,9 +95,8 @@ const server = http.createServer(async (req, res) => {
 				res.write(content);
 				res.end();
 			}).catch(err => {
-				console.log(err.code);
 				res.writeHead(200, {"Content-Type": "text/html"});
-				res.write(`${req.path}`);
+				res.write(`${err.message}`);
 				res.end();
 			});
 		}
