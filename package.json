@@ -1,6 +1,6 @@
 {
 	"name": "localserver",
-	"version": "0.0.2.1",
+	"version": "0.0.2.2",
 	"description": "Open local web pages in a local server",
 	"homepage": "http://localhost/",
 	"main": "localserver.js",

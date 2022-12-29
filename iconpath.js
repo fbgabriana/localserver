@@ -6,7 +6,7 @@ const getMimeTypeIcon = mimetype => {
 }
 
 const main = async () => {
-	const iconpath = await getMimeTypeIcon("text/plain")
+	const iconpath = await getMimeTypeIcon("text/hello")
 	console.log(iconpath)
 }
 
