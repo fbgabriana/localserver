@@ -47,7 +47,7 @@ const server = http.createServer(async (req, res) => {
 					res.writeHead(200, {"Content-Type": "text/html"});
 					res.write(`<!DOCTYPE html><html lang="en"><head>`)
 					res.write(`<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; object-src 'none'; script-src resource: chrome:; connect-src https:; img-src http: data: blob: chrome:; style-src 'unsafe-inline';"><meta name="color-scheme" content="light dark">`);
-					res.write(`<style>body {font: caption} .hidden {display: none} a {color: LinkText; text-decoration: none} a:link:hover {text-decoration: underline}  .up::before { content: ""; margin-left: 1.5em; padding-left: 24px; background: url("${__dirname}/icons/up.png") left/16px no-repeat } li.dir {list-style: none;} li.dir::before { content: ""; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/folder.png") left/16px no-repeat; } li.file { list-style: none;} li.file::before { content: ""; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/file.svg") left/16px no-repeat } li {line-height: 1.5em;}</style>`);
+					res.write(`<style>body {font: caption} .hidden {display: none} a {color: LinkText; text-decoration: none} a:link:hover {text-decoration: underline}  .up { margin-left: 1.5em; padding-left: 24px; background: url("${__dirname}/icons/up.png") left/16px no-repeat } li.dir {list-style: none; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/folder.png") left/16px no-repeat; } li.file { list-style: none; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/file.svg") left/16px no-repeat } li {line-height: 1.5em;}</style>`);
 					res.write(`</html><body>`)
 					crumbs = req.path.split("/");
 					let crumbPaths = [`<a href="/">${host}</a>`];
@@ -93,7 +93,7 @@ const server = http.createServer(async (req, res) => {
 								if (fs.existsSync(iconpathname + ".png")) iconpathname = iconpathname + ".png";
 							}
 							if (fs.existsSync(iconpathname)) {
-								res.write(`<li style="list-style: none; margin-left: 0; padding-left: 24px; background: url(${iconpathname}) left/16px no-repeat"><a href="${href[regfile]}">${regfile}</a></li>`);
+								res.write(`<li class="file" style="background-image: url(${iconpathname})"><a href="${href[regfile]}">${regfile}</a></li>`);
 							} else {
 								res.write(`<li class="file"><a href="${href[regfile]}">${regfile}</a></li>`);
 							}
