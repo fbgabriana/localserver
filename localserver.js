@@ -47,7 +47,7 @@ const server = http.createServer(async (req, res) => {
 					res.writeHead(200, {"Content-Type": "text/html"});
 					res.write(`<!DOCTYPE html><html lang="en"><head>`)
 					res.write(`<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; object-src 'none'; script-src resource: chrome:; connect-src https:; img-src http: data: blob: chrome:; style-src 'unsafe-inline';"><meta name="color-scheme" content="light dark">`);
-					res.write(`<style>body {font: caption} .hidden {display: none} a {color: LinkText; text-decoration: none} a:link:hover {text-decoration: underline}  .up { margin-left: 1.5em; padding-left: 24px; background: url("${__dirname}/icons/up.png") left/16px no-repeat } li.dir {list-style: none; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/folder.png") left/16px no-repeat; } li.file { list-style: none; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/file.svg") left/16px no-repeat } li {line-height: 1.5em;}</style>`);
+					res.write(`<style>h1 {border-bottom: 1px solid #c0c0c0; margin-bottom: 10px; padding-bottom: 10px} .hidden {display: none} a {color: LinkText; text-decoration: none} a:link:hover {text-decoration: underline}  .up { margin-left: 1.5em; padding-left: 24px; background: url("${__dirname}/icons/up.png") left/16px no-repeat } li.dir {list-style: none; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/folder.png") left/16px no-repeat; } li.file { list-style: none; margin-left: 0; padding-left: 24px; background: url("${__dirname}/icons/file.svg") left/16px no-repeat } li {line-height: 1.5em;}</style>`);
 					res.write(`</html><body>`)
 					crumbs = req.path.split("/");
 					let crumbPaths = [`<a href="/">${host}</a>`];
@@ -60,7 +60,7 @@ const server = http.createServer(async (req, res) => {
 					}
 					res.write(`<h1>Index of ${crumbPaths.join("/")}</h1>`);
 					if (req.path !== "/") {
-						res.write(`<p id="UI_goUp"><a class="up" href="${app.homepage}${path.split("/").slice(0, -2).join("/")}/">Up to higher level</a></p>`);
+						res.write(`<p id="UI_goUp"><a class="up" href="${app.homepage}${path.split("/").slice(0, -2).join("/")}/">[parent directory]</a></p>`);
 					}
 
 					res.write(`<ul>`);
