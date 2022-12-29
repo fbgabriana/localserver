@@ -1,6 +1,6 @@
 {
 	"name": "localserver",
-	"version": "0.0.2",
+	"version": "0.0.2.1",
 	"description": "Open local web pages in a local server",
 	"homepage": "http://localhost/",
 	"main": "localserver.js",
@@ -12,8 +12,8 @@
 	"license": "ISC",
 	"dependencies": {
 		"file-api": "^0.10.4",
+		"freedesktop-icons": "^1.0.0",
 		"mime-types": "^2.1.35",
 		"nodemon": "^2.0.20"
 	}
 }
-
