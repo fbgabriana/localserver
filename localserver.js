@@ -64,13 +64,13 @@ const server = http.createServer(async (req, res) => {
 					}
 
 					res.write(`<ul>`);
-					dirs = []; regfiles = []; href = Object.create(null);
+					let dirs = []; let regular_files = []; href = Object.create(null);
 					for (file of files) {
 						href[file] = req.path + file;
-						if (fs.lstatSync(fs.realpathSync(`${req.path}/${file}`)).isDirectory()) {
+						if (fs.statSync(`${req.path}/${file}`).isDirectory()) {
 							dirs.push(file);
 						} else {
-							regfiles.push(file)
+							regular_files.push(file)
 						}
 					}
 					for (dir of dirs) {
@@ -83,25 +83,25 @@ const server = http.createServer(async (req, res) => {
 							res.write(`<li class="dir hidden"><a href="${href[dir]}/">${dir}</a></li>`);
 						}
 					}
-					for (regfile of regfiles) {
-						if (regfile[0] !== ".") {
+					for (regular_file of regular_files) {
+						if (regular_file[0] !== ".") {
 							let iconpathname = "";
-							mimetype = mime.lookup(regfile)
+							mimetype = mime.lookup(regular_file)
 							if (iconpath && mimetype) {
 								iconpathname = iconpath + "/" + mimetype.replace("/","-")
 								if (fs.existsSync(iconpathname + ".svg")) iconpathname = iconpathname + ".svg";
 								if (fs.existsSync(iconpathname + ".png")) iconpathname = iconpathname + ".png";
 							}
 							if (fs.existsSync(iconpathname)) {
-								res.write(`<li class="file" style="background-image: url(${iconpathname})"><a href="${href[regfile]}">${regfile}</a></li>`);
+								res.write(`<li class="file" style="background-image: url(${iconpathname})"><a href="${href[regular_file]}">${regular_file}</a></li>`);
 							} else {
-								res.write(`<li class="file"><a href="${href[regfile]}">${regfile}</a></li>`);
+								res.write(`<li class="file"><a href="${href[regular_file]}">${regular_file}</a></li>`);
 							}
 						}
 					}
-					for (regfile of regfiles) {
-						if (regfile[0] === ".") {
-							res.write(`<li class="file hidden"><a href="${href[regfile]}">${regfile}</a></li>`);
+					for (regular_file of regular_files) {
+						if (regular_file[0] === ".") {
+							res.write(`<li class="file hidden"><a href="${href[regular_file]}">${regular_file}</a></li>`);
 						}
 					}
 					res.write(`</ul>`);
