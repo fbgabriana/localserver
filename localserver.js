@@ -16,14 +16,15 @@ const app = {
 	homepage: `http://${host}`,
 }
 
-const getMimeTypeIconPath = async (icontheme="breeze", size=16) => {
+const getMimeTypeIconPath = async (icontheme, size=16) => {
 	let path = await icon([{ "name": "text-plain", "context": "mimetypes", "size": size }], [icontheme]);
 	return path ? path.split("/").slice(0, -1).join("/") : path;
 }
 
-getMimeTypeIconPath().then(iconpath => {
-
+childProcess.exec("gsettings get org.gnome.desktop.interface icon-theme", (err, stdout, stdierr) => {
+getMimeTypeIconPath(stdout.replace(/^'|'\n$/g,"")).then(iconpath => {
 const server = http.createServer(async (req, res) => {
+
 	let mimetype = mime.lookup(req.url);
 	req.path = req.url.split("?")[0];
 	try {
@@ -227,6 +228,7 @@ window.addEventListener("DOMContentLoaded", event => {
 	console.log("\x1b[36m%s\x1b[0m",`[app] Local server started ${new Date().toLocaleString()}`, "\x1b[0m");
 	console.log("\x1b[36m%s\x1b[0m",`[app] Running at ${socketAddress.address} over ${socketAddress.port}...`, "\x1b[0m");
 	console.log("\x1b[34m%s\x1b[0m",`[app] ${app.homepage}${process.env.HOME}/\x1b[0m`, "\x1b[0m");
+});
 });
 });
 
