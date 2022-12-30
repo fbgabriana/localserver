@@ -118,6 +118,7 @@ window.addEventListener("DOMContentLoaded", event => {
 </script>
 </head>
 <body>
+<main>
 `)
 					const crumbs = req.path.split("/");
 					let crumbPaths = [`<a href="/">${host}</a>`];
@@ -129,7 +130,7 @@ window.addEventListener("DOMContentLoaded", event => {
 						}
 					}
 					res.write(`<h1>Index of ${crumbPaths.join("/")}</h1>\n`);
-					res.write(`<div class="toolbox">\n`);
+					res.write(`<nav class="toolbox">\n`);
 
 					let strGoUp = "";
 					if (UAString.includes("Chrome")) {
@@ -143,7 +144,7 @@ window.addEventListener("DOMContentLoaded", event => {
 						res.write(`<p id="UI_goUp"><a class="up" href="${app.homepage}${path.split("/").slice(0, -2).join("/")}/">${strGoUp}</a></p>\n`);
 					}
 					res.write(`<p id="UI_showHidden" style="display: none;"><label><input type="checkbox">Show hidden items</label></p>\n`);
-					res.write(`</div>\n`);
+					res.write(`</nav>\n`);
 					res.write(`<ul>\n`);
 					let dirs = []; let regular_files = []; href = Object.create(null);
 					for (file of files) {
@@ -186,6 +187,7 @@ window.addEventListener("DOMContentLoaded", event => {
 						}
 					}
 					res.write(`</ul>
+</main>
 </body>
 </html>`)
 					res.end();
@@ -206,11 +208,14 @@ window.addEventListener("DOMContentLoaded", event => {
 		if (req.path == "/favicon.ico") {
 			res.writeHead(204, {"Content-Type": mimetype});
 			res.end();
-		} else {
+		} else if (req.headers.referer) {
+			console.log(`File not found: ${req.path}`);
 			res.writeHead(404, {"Content-Type": mimetype});
 			res.end();
-			console.log(`File not found: ${req.path}`);
-			//childProcess.exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
+		} else {
+			childProcess.exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
+			res.writeHead(204, {"Content-Type": mimetype});
+			res.end();
 		}
 	}
 }).listen(host.port, host.hostname).on("error", err => {
