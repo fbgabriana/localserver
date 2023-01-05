@@ -6,3 +6,5 @@ A tool to make it easier to open local files in a local server. Intended for tes
 
 This is a personal project for personal use to aid myself in developing.
 
+* [View the source](https://github.com/fbgabriana/localserver){:target="_projectsource"}
+
