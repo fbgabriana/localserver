@@ -1,0 +1,7 @@
+#!/bin/sh
+
+PORT=${PORT:-"8080"}
+URI=${URI:-"$NAUTILUS_SCRIPT_SELECTED_URIS"}
+URI=${URI:-"$CAJA_SCRIPT_CURRENT_URI"}
+xdg-open "$(echo "$URI" | sed "s/file:\/\/\//http:\/\/localhost:$PORT\//g" | sed "s/\/index.html$/\//")"
+
