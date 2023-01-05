@@ -26,6 +26,7 @@ getMimeTypeIconPath(stdout.replace(/^'|'\n$/g,"")).then(iconpath => {
 const server = http.createServer(async (req, res) => {
 
 	let mimetype = mime.lookup(req.url);
+	if (req.url.endsWith(".esm")) mimetype = "application/ecmascript";
 	req.path = req.url.split("?")[0];
 	try {
 		req.path = decodeURI(req.path);
