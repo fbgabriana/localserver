@@ -1,4 +1,4 @@
-## [https://fbgabriana.github.io/](/ "Bamm's KodeGo Repository") / [localserver](/localserver/)
+## [fbgabriana.github.io](/ "Bamm's KodeGo Repository") / [localserver](/localserver/)
 
 # Local Server
 
