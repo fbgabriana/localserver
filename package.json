@@ -9,7 +9,7 @@
 		"test": "test.js"
 	},
 	"author": "github.com/fbgabriana",
-	"license": "ISC",
+	"license": "GPL2",
 	"dependencies": {
 		"file-api": "^0.10.4",
 		"freedesktop-icons": "^1.0.0",
