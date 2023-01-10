@@ -21,7 +21,7 @@ const getMimeTypeIconPath = async (icontheme, size=16) => {
 	return path ? path.split("/").slice(0, -1).join("/") : path;
 }
 
-childProcess.exec("gsettings get org.gnome.desktop.interface icon-theme", (err, stdout, stdierr) => {
+childProcess.exec("gsettings get org.gnome.desktop.interface icon-theme", (err, stdout, stderr) => {
 getMimeTypeIconPath(stdout.replace(/^'|'\n$/g,"")).then(iconpath => {
 const server = http.createServer(async (req, res) => {
 
