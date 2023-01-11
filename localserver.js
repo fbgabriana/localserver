@@ -6,6 +6,7 @@ const util = require("util");
 const mime = require("mime-types");
 const childProcess = require("child_process");
 const icon = require( "freedesktop-icons" );
+const iconPath = require( "./iconpath" );
 
 fs.readFile = util.promisify(fs.readFile).bind(this);
 fs.readDir = util.promisify(fs.readdir).bind(this);
@@ -49,7 +50,7 @@ const server = http.createServer(async (req, res) => {
 					res.end();
 				});
 			} else {
-				fs.readDir(req.path).then(files => {
+				fs.readDir(req.path).then(async files => {
 					const UAString = req.headers["user-agent"];
 					res.writeHead(200, {"Content-Type": "text/html"});
 					res.write(`<!DOCTYPE html>
@@ -168,14 +169,9 @@ window.addEventListener("DOMContentLoaded", event => {
 					}
 					for (regular_file of regular_files) {
 						if (regular_file[0] !== ".") {
-							let iconpathname = "";
 							mimetype = mime.lookup(regular_file);
-							if (iconpath && mimetype) {
-								iconpathname = iconpath + "/" + mimetype.replace("/","-");
-								if (fs.existsSync(iconpathname + ".svg")) iconpathname = iconpathname + ".svg";
-								if (fs.existsSync(iconpathname + ".png")) iconpathname = iconpathname + ".png";
-							}
-							if (fs.existsSync(iconpathname)) {
+							let iconpathname = await iconPath(mimetype);
+							if (iconpathname) {
 								res.write(`<li class="file" style="background-image: url(${iconpathname})"><a href="${href[regular_file]}">${regular_file}</a></li>\n`);
 							} else {
 								res.write(`<li class="file"><a href="${href[regular_file]}">${regular_file}</a></li>\n`);
