@@ -5,25 +5,18 @@ const fs = require("fs");
 const util = require("util");
 const mime = require("mime-types");
 const childProcess = require("child_process");
-const icon = require( "freedesktop-icons" );
 const iconPath = require( "./iconpath" );
 
-fs.readFile = util.promisify(fs.readFile).bind(this);
-fs.readDir = util.promisify(fs.readdir).bind(this);
+fs.readFile = util.promisify(fs.readFile).bind(fs);
+fs.readDir = util.promisify(fs.readdir).bind(fs);
 
 const host = require("./host.js");
 const app = {
 	versionString: `${process.env.npm_package_name}-${process.env.npm_package_version}`,
 	homepage: `http://${host}`,
 }
+const IconPath = Object.create(null);
 
-const getMimeTypeIconPath = async (icontheme, size=16) => {
-	let path = await icon([{ "name": "text-plain", "context": "mimetypes", "size": size }], [icontheme]);
-	return path ? path.split("/").slice(0, -1).join("/") : path;
-}
-
-childProcess.exec("gsettings get org.gnome.desktop.interface icon-theme", (err, stdout, stderr) => {
-getMimeTypeIconPath(stdout.replace(/^'|'\n$/g,"")).then(iconpath => {
 const server = http.createServer(async (req, res) => {
 
 	let mimetype = mime.lookup(req.url);
@@ -50,7 +43,7 @@ const server = http.createServer(async (req, res) => {
 					res.end();
 				});
 			} else {
-				fs.readDir(req.path).then(async files => {
+				fs.readDir(req.path).then(async dirItems => {
 					const UAString = req.headers["user-agent"];
 					res.writeHead(200, {"Content-Type": "text/html"});
 					res.write(`<!DOCTYPE html>
@@ -148,13 +141,15 @@ window.addEventListener("DOMContentLoaded", event => {
 					res.write(`<p id="UI_showHidden" style="display: none;"><label><input type="checkbox">Show hidden items</label></p>\n`);
 					res.write(`</nav>\n`);
 					res.write(`<ul>\n`);
-					let dirs = []; let regular_files = []; href = Object.create(null);
-					for (file of files) {
-						href[file] = req.path + file;
-						if (fs.statSync(`${req.path}/${file}`).isDirectory()) {
-							dirs.push(file);
+					let dirs = []; let files = []; href = Object.create(null); stats = Object.create(null);
+					for (dirItem of dirItems) {
+						href[dirItem] = req.path + dirItem;
+						stats[dirItem] = fs.statSync(href[dirItem]);
+						stats[dirItem].isExecutable = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
+						if (stats[dirItem].isDirectory()) {
+							dirs.push(dirItem);
 						} else {
-							regular_files.push(file)
+							files.push(dirItem)
 						}
 					}
 					for (dir of dirs) {
@@ -167,20 +162,25 @@ window.addEventListener("DOMContentLoaded", event => {
 							res.write(`<li class="dir hidden"><a href="${href[dir]}/">${dir}</a></li>\n`);
 						}
 					}
-					for (regular_file of regular_files) {
-						if (regular_file[0] !== ".") {
-							mimetype = mime.lookup(regular_file);
-							let iconpathname = await iconPath(mimetype);
-							if (iconpathname) {
-								res.write(`<li class="file" style="background-image: url(${iconpathname})"><a href="${href[regular_file]}">${regular_file}</a></li>\n`);
+					for (file of files) {
+						if (file[0] !== ".") {
+							mimetype = mime.lookup(file);
+							if (!mimetype && stats[file].isExecutable) {
+								mimetype = "application/x-executable";
+							}
+							if (!IconPath[mimetype]) {
+								IconPath[mimetype] = await iconPath(mimetype);
+							}
+							if (IconPath[mimetype]) {
+								res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[file]}">${file}</a></li>\n`);
 							} else {
-								res.write(`<li class="file"><a href="${href[regular_file]}">${regular_file}</a></li>\n`);
+								res.write(`<li class="file"><a href="${href[file]}">${file}</a></li>\n`);
 							}
 						}
 					}
-					for (regular_file of regular_files) {
-						if (regular_file[0] === ".") {
-							res.write(`<li class="file hidden"><a href="${href[regular_file]}">${regular_file}</a></li>\n`);
+					for (file of files) {
+						if (file[0] === ".") {
+							res.write(`<li class="file hidden"><a href="${href[file]}">${file}</a></li>\n`);
 						}
 					}
 					res.write(`</ul>
@@ -225,6 +225,3 @@ window.addEventListener("DOMContentLoaded", event => {
 	console.log("\x1b[36m%s\x1b[0m",`[app] Running at ${socketAddress.address} over ${socketAddress.port}...`, "\x1b[0m");
 	console.log("\x1b[34m%s\x1b[0m",`[app] ${app.homepage}${process.env.HOME}/\x1b[0m`, "\x1b[0m");
 });
-});
-});
-
