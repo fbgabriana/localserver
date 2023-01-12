@@ -32,7 +32,7 @@ const server = http.createServer(async (req, res) => {
 		console.log(`decodeURI failed (${err.message}): ${req.path}`);
 	}
 	if (fs.existsSync(req.path)) {
-		if (fs.lstatSync(fs.realpathSync(req.path)).isDirectory()) {
+		if (fs.statSync(fs.realpathSync(req.path)).isDirectory()) {
 			if (req.path.charAt(req.path.length - 1) !== "/") {
 				res.writeHead(307, {"Location": `${req.path}/`});
 				res.end();
@@ -186,7 +186,7 @@ window.addEventListener("DOMContentLoaded", event => {
 								IconPath[mimetype] = await iconPath(mimetype);
 							}
 							if (IconPath[mimetype]) {
-								res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" title="${mimetype}">${filename}</a></li>\n`);
+								res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}">${filename}</a></li>\n`);
 							} else {
 								res.write(`<li class="file"><a href="${href[filename]}">${filename}</a></li>\n`);
 							}
@@ -201,6 +201,32 @@ window.addEventListener("DOMContentLoaded", event => {
 </main>
 </body>
 </html>`)
+					res.end();
+				}).catch(err => {
+					res.writeHead(403, {"Content-Type": "text/html"});
+					res.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Problem loading page</title>
+<link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+<link rel="icon" id="favicon" href="chrome://global/skin/icons/info.svg" />
+</head>
+<body>
+<div id="errorPageContainer" class="container">
+<div class="title"><h1 class="title-text">Access to the file was denied</h1></div>
+<div id="errorShortDesc">
+<p id="errorShortDescText">The file at <strong>${host}${req.path}</strong> is not readable.</p>
+</div>
+<div id="errorLongDesc">
+<p id="errorLongDescText">It may have been removed, moved, or file permissions may be preventing access.</p>
+</div>
+<div id="errorCode">
+<p id="errorCodeText">${err.message}</p>
+</div>
+</body>
+</html>`);
 					res.end();
 				});
 			}
