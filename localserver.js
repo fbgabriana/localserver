@@ -9,6 +9,11 @@ const iconPath = require( "./iconpath" );
 
 fs.readFile = util.promisify(fs.readFile).bind(fs);
 fs.readDir = util.promisify(fs.readdir).bind(fs);
+fs.read = util.promisify(fs.read).bind(fs);
+fs.open = util.promisify(fs.open).bind(fs);
+exec = util.promisify(childProcess.exec);
+
+const buffer = new Buffer.alloc(4);
 
 const host = require("./host.js");
 const app = {
@@ -93,12 +98,11 @@ p#UI_showHidden {position: absolute; top: -1em; left: 480px;}
 </style>
 <script>
 window.addEventListener("DOMContentLoaded", event => {
-
-	const UI_showHidden = document.querySelector("#UI_showHidden");
+	const p_showHidden = document.querySelector("#UI_showHidden");
 	const check_showHidden = document.querySelector("#UI_showHidden input[type='checkbox']");
 	const list_hiddenItems = document.querySelectorAll(".hidden");
 
-	UI_showHidden.style.display = list_hiddenItems.length ? "block" : "none";
+	p_showHidden.style.display = list_hiddenItems.length ? "block" : "none";
 	check_showHidden.checked = localStorage.getItem("show-hidden") === "true";
 
 	const list_showHidden = event => {
@@ -152,35 +156,45 @@ window.addEventListener("DOMContentLoaded", event => {
 							files.push(dirItem)
 						}
 					}
-					for (dir of dirs) {
-						if (dir[0] !== ".") {
-							res.write(`<li class="dir"><a href="${href[dir]}/">${dir}</a></li>\n`);
+					for (dirname of dirs) {
+						if (dirname[0] !== ".") {
+							res.write(`<li class="dir"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
 						}
 					}
-					for (dir of dirs) {
-						if (dir[0] === ".") {
-							res.write(`<li class="dir hidden"><a href="${href[dir]}/">${dir}</a></li>\n`);
+					for (dirname of dirs) {
+						if (dirname[0] === ".") {
+							res.write(`<li class="dir hidden"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
 						}
 					}
-					for (file of files) {
-						if (file[0] !== ".") {
-							mimetype = mime.lookup(file);
-							if (!mimetype && stats[file].isExecutable) {
-								mimetype = "application/x-executable";
+					for (filename of files) {
+						if (filename[0] !== ".") {
+							mimetype = mime.lookup(filename);
+							if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable"
+							if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
+							if (!mimetype && stats[filename] && stats[filename].isExecutable) {
+								mimetype = await fs.open(href[filename]).then(fd => {
+									return fs.read(fd, buffer);
+								}).then(out => out.buffer.toString()).then(str => {
+									return (str == "\x7F" + "ELF") ? "application/x-sharedlib" : str.startsWith("#!") ? "application/x-shellscript" : "application/x-executable";
+								});
+							}
+							if (!mimetype && href[filename]) {
+								let filetype = await exec(`file -bi "${href[filename]}"`).then(out => out.stdout.trim());
+								mimetype = filetype.endsWith("charset=binary") ? "application/octet-stream" : "text/plain";
 							}
 							if (!IconPath[mimetype]) {
 								IconPath[mimetype] = await iconPath(mimetype);
 							}
 							if (IconPath[mimetype]) {
-								res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[file]}">${file}</a></li>\n`);
+								res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" title="${mimetype}">${filename}</a></li>\n`);
 							} else {
-								res.write(`<li class="file"><a href="${href[file]}">${file}</a></li>\n`);
+								res.write(`<li class="file"><a href="${href[filename]}">${filename}</a></li>\n`);
 							}
 						}
 					}
-					for (file of files) {
-						if (file[0] === ".") {
-							res.write(`<li class="file hidden"><a href="${href[file]}">${file}</a></li>\n`);
+					for (filename of files) {
+						if (filename[0] === ".") {
+							res.write(`<li class="file hidden"><a href="${href[filename]}">${filename}</a></li>\n`);
 						}
 					}
 					res.write(`</ul>
@@ -210,7 +224,7 @@ window.addEventListener("DOMContentLoaded", event => {
 			res.writeHead(404, {"Content-Type": mimetype});
 			res.end();
 		} else {
-			childProcess.exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
+			exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
 			res.writeHead(204, {"Content-Type": mimetype});
 			res.end();
 		}
