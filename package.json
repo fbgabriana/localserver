@@ -1,12 +1,11 @@
 {
 	"name": "localserver",
-	"version": "0.0.2.4",
+	"version": "0.0.2.5",
 	"description": "Open local web pages in a local server",
 	"homepage": "http://localhost/",
 	"main": "localserver.js",
 	"scripts": {
-		"start": "nodemon",
-		"test": "test.js"
+		"start": "nodemon"
 	},
 	"author": "github.com/fbgabriana",
 	"license": "GPL2",
