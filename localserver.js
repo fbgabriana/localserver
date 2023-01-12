@@ -173,14 +173,15 @@ window.addEventListener("DOMContentLoaded", event => {
 							if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
 							if (!mimetype && stats[filename] && stats[filename].isExecutable) {
 								mimetype = await fs.open(href[filename]).then(fd => {
-									return fs.read(fd, buffer);
-								}).then(out => out.buffer.toString()).then(str => {
-									return (str == "\x7F" + "ELF") ? "application/x-sharedlib" : str.startsWith("#!") ? "application/x-shellscript" : "application/x-executable";
+									return fs.read(fd, buffer).then(out => {fs.close(fd); return out.buffer.toString()});
+								}).then(str => {
+									return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" : str.startsWith("#!") ? "application/x-shellscript" : "application/x-executable";
 								});
 							}
 							if (!mimetype && href[filename]) {
-								let filetype = await exec(`file -bi "${href[filename]}"`).then(out => out.stdout.trim());
-								mimetype = filetype.endsWith("charset=binary") ? "application/octet-stream" : "text/plain";
+								mimetype = await fs.readFile(`${href[filename]}`).then(str => {
+									return str.includes("\0") ? "application/octet-stream" : "text/plain";
+								});
 							}
 							if (!IconPath[mimetype]) {
 								IconPath[mimetype] = await iconPath(mimetype);
