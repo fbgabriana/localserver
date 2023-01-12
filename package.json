@@ -1,6 +1,6 @@
 {
 	"name": "localserver",
-	"version": "0.0.2.5",
+	"version": "0.0.2.6",
 	"description": "Open local web pages in a local server",
 	"homepage": "http://localhost/",
 	"main": "localserver.js",
@@ -16,3 +16,4 @@
 		"nodemon": "^2.0.20"
 	}
 }
+

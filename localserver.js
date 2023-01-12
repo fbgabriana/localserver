@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
-const http = require("http");
-const fs = require("fs");
-const util = require("util");
+const http = require("node:http");
+const fs = require("node:fs");
+const util = require("node:util");
+const childProcess = require("node:child_process");
 const mime = require("mime-types");
-const childProcess = require("child_process");
 const iconPath = require( "./iconpath" );
 
 fs.readFile = util.promisify(fs.readFile).bind(fs);
 fs.readDir = util.promisify(fs.readdir).bind(fs);
 fs.read = util.promisify(fs.read).bind(fs);
 fs.open = util.promisify(fs.open).bind(fs);
-exec = util.promisify(childProcess.exec);
+childProcess.exec = util.promisify(childProcess.exec).bind(childProcess);
 
 const buffer = new Buffer.alloc(4);
 
@@ -173,7 +173,7 @@ window.addEventListener("DOMContentLoaded", event => {
 							if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
 							if (!mimetype && stats[filename] && stats[filename].isExecutable) {
 								mimetype = await fs.open(href[filename]).then(fd => {
-									return fs.read(fd, buffer).then(out => {fs.close(fd); return out.buffer.toString()});
+									return fs.read(fd, buffer).then(output => {fs.close(fd); return output.buffer.toString()});
 								}).then(str => {
 									return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" : str.startsWith("#!") ? "application/x-shellscript" : "application/x-executable";
 								});
@@ -251,7 +251,7 @@ window.addEventListener("DOMContentLoaded", event => {
 			res.writeHead(404, {"Content-Type": mimetype});
 			res.end();
 		} else {
-			exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
+			childProcess.exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
 			res.writeHead(204, {"Content-Type": mimetype});
 			res.end();
 		}
