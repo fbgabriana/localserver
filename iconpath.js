@@ -10,7 +10,9 @@ const getIconPath = (iconname, context="mimetypes") => {
 		return stdout.trim().replace(/^'|'$/g,"");
 	}).then(async icontheme => {
 		iconname = `${(iconname || "application/octet-stream").replace("/","-")}`;
+		iconname_generic = iconname.substring(0, iconname.indexOf("-")) + "-x-generic";
 		return await freedesktopIcon( [ { name: `${iconname}`, context: `${context}`, size: 16 }], [`${icontheme}`] )
+			?? await freedesktopIcon( [ { name: `${iconname_generic}`, context: `${context}`, size: 16 }], [`${icontheme}`] )
 			?? await freedesktopIcon( [ { name: `unknown`, context: "mimetypes", size: 16 }], [`${icontheme}`] )
 			?? "";
 	}).catch(err => {

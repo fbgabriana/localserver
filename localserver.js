@@ -13,7 +13,7 @@ fs.read = util.promisify(fs.read).bind(fs);
 fs.open = util.promisify(fs.open).bind(fs);
 childProcess.exec = util.promisify(childProcess.exec).bind(childProcess);
 
-const buffer = new Buffer.alloc(4);
+const buffer = new Buffer.alloc(1024);
 
 const host = require("./host.js");
 const app = {
@@ -150,7 +150,7 @@ window.addEventListener("DOMContentLoaded", event => {
 						if (dirItem) {
 							href[dirItem] = req.path + dirItem;
 							stats[dirItem] = fs.statSync(href[dirItem]);
-							stats[dirItem].isExecutable = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
+							stats[dirItem].isExec = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
 							if (stats[dirItem].isDirectory()) {
 								dirs.push(dirItem);
 							} else {
@@ -173,16 +173,16 @@ window.addEventListener("DOMContentLoaded", event => {
 							mimetype = mime.lookup(filename);
 							if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable"
 							if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
-							if (!mimetype && stats[filename] && stats[filename].isExecutable) {
-								mimetype = await fs.open(href[filename]).then(fd => {
-									return fs.read(fd, buffer).then(output => {fs.close(fd); return output.buffer.toString()});
-								}).then(str => {
-									return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" : str.startsWith("#!") ? "application/x-shellscript" : "application/x-executable";
-								});
-							}
 							if (!mimetype && href[filename]) {
-								mimetype = await fs.readFile(`${href[filename]}`).then(str => {
-									return str.includes("\0") ? "application/octet-stream" : "text/plain";
+								mimetype = await fs.open(href[filename]).then(fd => {
+									return fs.read(fd, buffer).then(output => { fs.close(fd);
+										return output.buffer.slice(0, output.bytesRead).toString()
+									});
+								}).then(str => {
+									return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" :
+										   str.startsWith("#!") ? "application/x-shellscript" :
+										   str.indexOf("\0") === -1 ? "text/plain" :
+										   stats[filename].isExec ? "application/x-executable" : "application/octet-stream";
 								});
 							}
 							if (!IconPath[mimetype]) {
