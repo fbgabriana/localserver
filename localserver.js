@@ -31,7 +31,7 @@ const server = http.createServer(async (req, res) => {
 	} catch(err) {
 		console.log(`decodeURI failed (${err.message}): ${req.path}`);
 	}
-	if (fs.existsSync(req.path)) {
+	if (req.path && fs.existsSync(req.path)) {
 		if (fs.statSync(fs.realpathSync(req.path)).isDirectory()) {
 			if (req.path.charAt(req.path.length - 1) !== "/") {
 				res.writeHead(307, {"Location": `${req.path}/`});
@@ -147,13 +147,15 @@ window.addEventListener("DOMContentLoaded", event => {
 					res.write(`<ul>\n`);
 					let dirs = []; let files = []; href = Object.create(null); stats = Object.create(null);
 					for (dirItem of dirItems) {
-						href[dirItem] = req.path + dirItem;
-						stats[dirItem] = fs.statSync(href[dirItem]);
-						stats[dirItem].isExecutable = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
-						if (stats[dirItem].isDirectory()) {
-							dirs.push(dirItem);
-						} else {
-							files.push(dirItem)
+						if (dirItem) {
+							href[dirItem] = req.path + dirItem;
+							stats[dirItem] = fs.statSync(href[dirItem]);
+							stats[dirItem].isExecutable = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
+							if (stats[dirItem].isDirectory()) {
+								dirs.push(dirItem);
+							} else {
+								files.push(dirItem)
+							}
 						}
 					}
 					for (dirname of dirs) {
