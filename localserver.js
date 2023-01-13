@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
 					res.end();
 				});
 			} else {
-				fs.readDir(req.path).then(async dirItems => {
+				fs.readDir(req.path).then(dirItems => dirItems.sort(new Intl.Collator().compare)).then(async dirItems => {
 					const UAString = req.headers["user-agent"];
 					res.writeHead(200, {"Content-Type": "text/html"});
 					res.write(`<!DOCTYPE html>
@@ -145,58 +145,69 @@ window.addEventListener("DOMContentLoaded", event => {
 					res.write(`<p id="UI_showHidden" style="display: none;"><label><input type="checkbox">Show hidden items</label></p>\n`);
 					res.write(`</nav>\n`);
 					res.write(`<ul>\n`);
-					let dirs = []; let files = []; href = Object.create(null); stats = Object.create(null);
+					let dirs = []; let files = [];
+					let dirs_hidden = []; let files_hidden = [];
+					href = Object.create(null); stats = Object.create(null);
 					for (dirItem of dirItems) {
 						if (dirItem) {
 							href[dirItem] = req.path + dirItem;
 							stats[dirItem] = fs.statSync(href[dirItem]);
 							stats[dirItem].isExec = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
 							if (stats[dirItem].isDirectory()) {
-								dirs.push(dirItem);
+								(dirItem[0] === ".") ? dirs_hidden.push(dirItem) : dirs.push(dirItem)
 							} else {
-								files.push(dirItem)
+								(dirItem[0] === ".") ? files_hidden.push(dirItem) : files.push(dirItem)
 							}
 						}
 					}
 					for (dirname of dirs) {
-						if (dirname[0] !== ".") {
-							res.write(`<li class="dir"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
-						}
+						res.write(`<li class="dir"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
 					}
-					for (dirname of dirs) {
-						if (dirname[0] === ".") {
-							res.write(`<li class="dir hidden"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
-						}
+					for (dirname of dirs_hidden) {
+						res.write(`<li class="dir hidden"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
 					}
 					for (filename of files) {
-						if (filename[0] !== ".") {
-							mimetype = mime.lookup(filename);
-							if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable"
-							if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
-							if (!mimetype && href[filename]) {
-								mimetype = await fs.open(href[filename]).then(fd => {
-									return fs.read(fd, buffer).then(output => { fs.close(fd);
-										return output.buffer.slice(0, output.bytesRead).toString()
-									});
-								}).then(str => {
-									return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" :
-										   str.startsWith("#!") ? "application/x-shellscript" :
-										   str.indexOf("\0") === -1 ? "text/plain" :
-										   stats[filename].isExec ? "application/x-executable" : "application/octet-stream";
+						mimetype = mime.lookup(filename);
+						if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable"
+						if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
+						if (!mimetype && href[filename]) {
+							mimetype = await fs.open(href[filename]).then(fd => {
+								return fs.read(fd, buffer).then(output => { fs.close(fd);
+									return output.buffer.slice(0, output.bytesRead).toString()
 								});
-							}
-							if (!IconPath[mimetype]) {
-								IconPath[mimetype] = await iconPath(mimetype);
-							}
-							if (IconPath[mimetype]) {
-								res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}">${filename}</a></li>\n`);
-							} else {
-								res.write(`<li class="file"><a href="${href[filename]}">${filename}</a></li>\n`);
-							}
+							}).then(str => {
+								return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" :
+									   str.startsWith("#!") ? "application/x-shellscript" :
+									   str.indexOf("\0") === -1 ? "text/plain" :
+									   stats[filename].isExec ? "application/x-executable" : "application/octet-stream";
+							});
+						}
+						if (!IconPath[mimetype]) {
+							IconPath[mimetype] = await iconPath(mimetype);
+						}
+						if (IconPath[mimetype]) {
+							res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}">${filename}</a></li>\n`);
+						} else {
+							res.write(`<li class="file"><a href="${href[filename]}">${filename}</a></li>\n`);
 						}
 					}
-					for (filename of files) {
-						if (filename[0] === ".") {
+					for (filename of files_hidden) {
+						mimetype = mime.lookup(filename);
+						if (!mimetype && href[filename]) {
+							mimetype = await fs.open(href[filename]).then(fd => {
+								return fs.read(fd, buffer).then(output => { fs.close(fd);
+									return output.buffer.slice(0, output.bytesRead).toString()
+								});
+							}).then(str => {
+								return str.indexOf("\0") === -1 ? "text/plain" : "application/octet-stream";
+							});
+						}
+						if (!IconPath[mimetype]) {
+							IconPath[mimetype] = await iconPath(mimetype);
+						}
+						if (IconPath[mimetype]) {
+							res.write(`<li class="file hidden" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}">${filename}</a></li>\n`);
+						} else {
 							res.write(`<li class="file hidden"><a href="${href[filename]}">${filename}</a></li>\n`);
 						}
 					}
