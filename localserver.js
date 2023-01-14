@@ -280,9 +280,61 @@ window.addEventListener("DOMContentLoaded", event => {
 				res.write(content);
 				res.end();
 			}).catch(err => {
-				res.writeHead(200, {"Content-Type": "text/html"});
-				res.write(`${err.message}`);
-				res.end();
+					switch (err.code) {
+					case "EACCES":
+						res.writeHead(403, {"Content-Type": "text/html"});
+						res.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Problem loading page</title>
+<link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+<link rel="icon" id="favicon" href="chrome://global/skin/icons/info.svg" />
+</head>
+<body>
+<div id="errorPageContainer" class="container">
+<div class="title"><h1 class="title-text">Access to the file was denied</h1></div>
+<div id="errorShortDesc">
+<p id="errorShortDescText">The file at <strong>${host}${req.path}</strong> is not readable.</p>
+</div>
+<div id="errorLongDesc">
+<p id="errorLongDescText">It may have been removed, moved, or file permissions may be preventing access.</p>
+</div>
+<div id="errorCode">
+<p id="errorCodeText">${err.message}</p>
+</div>
+</body>
+</html>`);
+						res.end();
+						break;
+					default:
+						res.writeHead(500, {"Content-Type": "text/html"});
+						res.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Internal server error</title>
+<link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+<link rel="icon" id="favicon" href="chrome://global/skin/icons/error.svg" />
+</head>
+<body>
+<div id="errorPageContainer" class="container">
+<div class="title"><h1 class="title-text">A server error has occurred</h1></div>
+<div id="errorShortDesc">
+<p id="errorShortDescText">An unexpected server error occurred while trying to display <strong>${host}${req.path}</strong>.</p>
+</div>
+<div id="errorLongDesc">
+<p id="errorLongDescText">The following error message may provide a clue as to its cause:</p>
+</div>
+<div id="errorCode">
+<p id="errorCodeText">${err.message}</p>
+</div>
+</body>
+</html>`);
+						res.end();
+					}
 			});
 		}
 	} else {
