@@ -29,7 +29,7 @@ const server = http.createServer(async (req, res) => {
 	try {
 		req.path = decodeURI(req.path);
 	} catch(err) {
-		console.log(`decodeURI failed (${err.message}): ${req.path}`);
+		console.error(`decodeURI failed (${err.message}): ${req.path}`);
 	}
 	if (req.path && fs.existsSync(req.path)) {
 		if (fs.statSync(fs.realpathSync(req.path)).isDirectory()) {
@@ -168,19 +168,19 @@ window.addEventListener("DOMContentLoaded", event => {
 					}
 					for (filename of files) {
 						mimetype = mime.lookup(filename);
-						if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable"
-						if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload"
-						if (!mimetype && href[filename]) {
-							mimetype = await fs.open(href[filename]).then(fd => {
-								return fs.read(fd, buffer).then(output => { fs.close(fd);
-									return output.buffer.slice(0, output.bytesRead).toString()
+						if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable";
+						if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload";
+						if (!mimetype && href[filename] && stats[filename]) {
+							mimetype = await fs.open(href[filename]).then(async fd => {
+								return await fs.read(fd, buffer, 0, buffer.length, 0).then(output => { fs.close(fd);
+									return output.buffer.slice(0, output.bytesRead).toString();
 								});
 							}).then(str => {
 								return str.startsWith("\x7F" + "ELF") ? "application/x-sharedlib" :
 									   str.startsWith("#!") ? "application/x-shellscript" :
 									   str.indexOf("\0") === -1 ? "text/plain" :
 									   stats[filename].isExec ? "application/x-executable" : "application/octet-stream";
-							});
+							}).catch(err => console.error(err.message, `${href[filename]}`) || "unknown");
 						}
 						if (!IconPath[mimetype]) {
 							IconPath[mimetype] = await iconPath(mimetype);
@@ -216,7 +216,15 @@ window.addEventListener("DOMContentLoaded", event => {
 </body>
 </html>`)
 					res.end();
-				}).catch(err => showErrorPage(err));
+				}).catch(err => {
+					if (err.path.endsWith("/")) {
+						showErrorPage(err);
+					} else {
+						console.error(err.message);
+						res.writeHead(204, {"Content-Type": mimetype});
+						res.end();
+					}
+				});
 			}
 		} else {
 			fs.readFile(`${req.path}`).then(content => {
@@ -230,9 +238,7 @@ window.addEventListener("DOMContentLoaded", event => {
 			res.writeHead(204, {"Content-Type": mimetype});
 			res.end();
 		} else if (!req.headers.referer || (req.headers.referer && req.headers.referer.endsWith("/"))) {
-			childProcess.exec(`zenity --info --text='<b>Could not find "${req.path}"</b>.\n\nPlease check the spelling and try again.' --no-wrap`);
-			res.writeHead(204, {"Content-Type": mimetype});
-			res.end();
+			fs.readFile(`${req.path}`).catch(err => showErrorPage(err));
 		} else {
 			console.error(`File not found: ${req.path}`);
 			res.writeHead(404, {"Content-Type": mimetype});
@@ -241,8 +247,43 @@ window.addEventListener("DOMContentLoaded", event => {
 	}
 
 	const showErrorPage = err => {
+		const zenity = "zenity";
 		switch (err.code) {
+		case "ENOENT":
+			childProcess.exec(`${zenity} --info --text='<b>Could not find "${req.path}".</b>\n\nPlease check the spelling and try again.' --no-wrap`).catch(() => {
+			res.writeHead(404, {"Content-Type": "text/html"});
+			res.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Problem loading page</title>
+<link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+<link rel="icon" id="favicon" href="chrome://global/skin/icons/info.svg" />
+</head>
+<body>
+<div id="errorPageContainer" class="container">
+<div class="title"><h1 class="title-text">File not found</h1></div>
+<div id="errorShortDesc">
+<p id="errorShortDescText">The file at <strong>${host}${req.path}</strong> couldn’t be accessed.</p>
+</div>
+<div id="errorLongDesc">
+<p id="errorLongDescText">It may have been moved, renamed, or deleted, or the file name has capitalization or other typing errors.</p>
+</div>
+<div id="errorCode">
+<p id="errorCodeText">${err.message}</p>
+</div>
+</body>
+</html>`);
+			res.end();
+			}).finally(() => {
+			console.error(err.message);
+			res.writeHead(204, {"Content-Type": mimetype});
+			res.end();
+			});
+			break;
 		case "EACCES":
+			childProcess.exec(`${zenity} --info --text='<b>The folder contents could not be displayed.</b>\n\nYou do not have the permissions necessary to view the contents of "${req.path}".' --no-wrap`).catch(() => {
 			res.writeHead(403, {"Content-Type": "text/html"});
 			res.write(`<!DOCTYPE html>
 <html lang="en">
@@ -268,8 +309,14 @@ window.addEventListener("DOMContentLoaded", event => {
 </body>
 </html>`);
 			res.end();
+			}).finally(() => {
+			console.error(err.message);
+			res.writeHead(204, {"Content-Type": mimetype});
+			res.end();
+			});
 			break;
 		default:
+			console.error(err.message);
 			res.writeHead(500, {"Content-Type": "text/html"});
 			res.write(`<!DOCTYPE html>
 <html lang="en">
@@ -298,7 +345,7 @@ window.addEventListener("DOMContentLoaded", event => {
 		}
 	}
 }).listen(host.port, host.hostname).on("error", err => {
-	console.log(`\x1b[31m${err.message}\x1b[0m`);
+	console.error(`\x1b[31m${err.message}\x1b[0m`);
 	process.exit(0);
 }).on("listening", () => {
 	const socketAddress = server.address();
