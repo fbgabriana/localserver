@@ -271,7 +271,7 @@ window.addEventListener("DOMContentLoaded", event => {
 </body>
 </html>`);
 						res.end();
-						break;
+					}
 				});
 			}
 		} else {
