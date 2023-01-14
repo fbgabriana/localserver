@@ -217,8 +217,10 @@ window.addEventListener("DOMContentLoaded", event => {
 </html>`)
 					res.end();
 				}).catch(err => {
-					res.writeHead(403, {"Content-Type": "text/html"});
-					res.write(`<!DOCTYPE html>
+					switch (err.code) {
+					case "EACCES":
+						res.writeHead(403, {"Content-Type": "text/html"});
+						res.write(`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -241,7 +243,35 @@ window.addEventListener("DOMContentLoaded", event => {
 </div>
 </body>
 </html>`);
-					res.end();
+						res.end();
+						break;
+					default:
+						res.writeHead(500, {"Content-Type": "text/html"});
+						res.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Internal server error</title>
+<link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
+<link rel="icon" id="favicon" href="chrome://global/skin/icons/error.svg" />
+</head>
+<body>
+<div id="errorPageContainer" class="container">
+<div class="title"><h1 class="title-text">A server error has occurred</h1></div>
+<div id="errorShortDesc">
+<p id="errorShortDescText">An unexpected server error occurred while trying to display <strong>${host}${req.path}</strong>.</p>
+</div>
+<div id="errorLongDesc">
+<p id="errorLongDescText">The following error message may provide a clue as to its cause:</p>
+</div>
+<div id="errorCode">
+<p id="errorCodeText">${err.message}</p>
+</div>
+</body>
+</html>`);
+						res.end();
+						break;
 				});
 			}
 		} else {
