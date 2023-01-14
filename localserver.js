@@ -250,7 +250,8 @@ window.addEventListener("DOMContentLoaded", event => {
 		const zenity = "zenity";
 		switch (err.code) {
 		case "ENOENT":
-			childProcess.exec(`${zenity} --info --text='<b>Could not find "${req.path}".</b>\n\nPlease check the spelling and try again.' --no-wrap`).catch(() => {
+			childProcess.exec(`${zenity} --info --text='<b>Could not find "${req.path}".</b>\n\nPlease check the spelling and try again.' --no-wrap`).catch(exit => {
+			if (exit.code !== 127) return;
 			res.writeHead(404, {"Content-Type": "text/html"});
 			res.write(`<!DOCTYPE html>
 <html lang="en">
@@ -283,7 +284,8 @@ window.addEventListener("DOMContentLoaded", event => {
 			});
 			break;
 		case "EACCES":
-			childProcess.exec(`${zenity} --info --text='<b>The folder contents could not be displayed.</b>\n\nYou do not have the permissions necessary to view the contents of "${req.path}".' --no-wrap`).catch(() => {
+			childProcess.exec(`${zenity} --info --text='<b>The folder contents could not be displayed.</b>\n\nYou do not have the permissions necessary to view the contents of "${req.path}".' --no-wrap`).catch(exit => {
+			if (exit.code !== 127) return;
 			res.writeHead(403, {"Content-Type": "text/html"});
 			res.write(`<!DOCTYPE html>
 <html lang="en">
@@ -316,7 +318,7 @@ window.addEventListener("DOMContentLoaded", event => {
 			});
 			break;
 		default:
-			console.error(err.message);
+			console.error(`\x1b[31m${err.message}\x1b[0m`);
 			res.writeHead(500, {"Content-Type": "text/html"});
 			res.write(`<!DOCTYPE html>
 <html lang="en">
@@ -329,12 +331,12 @@ window.addEventListener("DOMContentLoaded", event => {
 </head>
 <body>
 <div id="errorPageContainer" class="container">
-<div class="title"><h1 class="title-text">A server error has occurred</h1></div>
+<div class="title"><h1 class="title-text">An error has occurred</h1></div>
 <div id="errorShortDesc">
-<p id="errorShortDescText">An unexpected server error occurred while trying to display <strong>${host}${req.path}</strong>.</p>
+<p id="errorShortDescText">An unexpected error occurred while trying to display <strong>${host}${req.path}</strong>.</p>
 </div>
 <div id="errorLongDesc">
-<p id="errorLongDescText">The following error message may provide a clue as to its cause:</p>
+<p id="errorLongDescText">The system provided the following error message:</p>
 </div>
 <div id="errorCode">
 <p id="errorCodeText">${err.message}</p>
@@ -354,5 +356,4 @@ window.addEventListener("DOMContentLoaded", event => {
 	console.log("\x1b[36m%s\x1b[0m",`[app] Running at ${socketAddress.address} over ${socketAddress.port}...`, "\x1b[0m");
 	console.log("\x1b[34m%s\x1b[0m",`[app] ${app.homepage}${process.env.HOME}/\x1b[0m`, "\x1b[0m");
 });
-
 
