@@ -48,7 +48,7 @@ const server = http.createServer(async (req, res) => {
 					res.end();
 				});
 			} else {
-				fs.readDir(req.path).then(dirItems => dirItems.sort(new Intl.Collator().compare)).then(async dirItems => {
+				fs.readDir(req.path).then(dirList => dirList.sort(new Intl.Collator().compare)).then(async dirList => {
 					const UAString = req.headers["user-agent"];
 					res.writeHead(200, {"Content-Type": "text/html"});
 					res.write(`<!DOCTYPE html>
@@ -148,15 +148,15 @@ window.addEventListener("DOMContentLoaded", event => {
 					let dirs = []; let files = [];
 					let dirs_hidden = []; let files_hidden = [];
 					href = Object.create(null); stats = Object.create(null);
-					for (dirItem of dirItems) {
-						if (dirItem) {
-							href[dirItem] = req.path + dirItem;
-							stats[dirItem] = fs.statSync(href[dirItem]);
-							stats[dirItem].isExec = stats[dirItem].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
-							if (stats[dirItem].isDirectory()) {
-								(dirItem[0] === ".") ? dirs_hidden.push(dirItem) : dirs.push(dirItem)
+					for (dirEnt of dirList) {
+						if (dirEnt) {
+							href[dirEnt] = req.path + dirEnt;
+							stats[dirEnt] = fs.statSync(href[dirEnt]);
+							stats[dirEnt].isExec = stats[dirEnt].mode & (fs.constants.S_IXUSR | fs.constants.S_IXGRP | fs.constants.S_IXOTH);
+							if (stats[dirEnt].isDirectory()) {
+								(dirEnt[0] === ".") ? dirs_hidden.push(dirEnt) : dirs.push(dirEnt)
 							} else {
-								(dirItem[0] === ".") ? files_hidden.push(dirItem) : files.push(dirItem)
+								(dirEnt[0] === ".") ? files_hidden.push(dirEnt) : files.push(dirEnt)
 							}
 						}
 					}
@@ -167,10 +167,12 @@ window.addEventListener("DOMContentLoaded", event => {
 						res.write(`<li class="dir hidden"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
 					}
 					for (filename of files) {
-						mimetype = mime.lookup(filename);
+						mimetype = mime.lookup(filename); // check mimetype from filename extension
+						if (stats[filename].size === 0) mimetype = "application/x-empty";
 						if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable";
 						if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload";
 						if (!mimetype && href[filename] && stats[filename]) {
+							// if none, read some bytes from the file
 							mimetype = await fs.open(href[filename]).then(async fd => {
 								return await fs.read(fd, buffer, 0, buffer.length, 0).then(output => { fs.close(fd);
 									return output.buffer.slice(0, output.bytesRead).toString();
@@ -180,13 +182,15 @@ window.addEventListener("DOMContentLoaded", event => {
 									   str.startsWith("#!") ? "application/x-shellscript" :
 									   str.indexOf("\0") === -1 ? "text/plain" :
 									   stats[filename].isExec ? "application/x-executable" : "application/octet-stream";
-							}).catch(err => console.error(err.message, `${href[filename]}`) || "unknown");
+							}).catch(() => {
+								return "unknown"; // if file is undreadable, mimetype is unknown.
+							});
 						}
 						if (!IconPath[mimetype]) {
 							IconPath[mimetype] = await iconPath(mimetype);
 						}
 						if (IconPath[mimetype]) {
-							res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}">${filename}</a></li>\n`);
+							res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}" data-filesize="${stats[filename].size}" data-lastmod="${stats[filename].mtime}">${filename}</a></li>\n`);
 						} else {
 							res.write(`<li class="file"><a href="${href[filename]}">${filename}</a></li>\n`);
 						}
