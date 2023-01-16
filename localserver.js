@@ -36,17 +36,14 @@ const server = http.createServer(async (req, res) => {
 			if (req.path.charAt(req.path.length - 1) !== "/") {
 				res.writeHead(307, {"Location": `${req.path}/`});
 				res.end();
+				return;
 			}
 			if (fs.existsSync(req.path + "index.html")) {
 				fs.readFile(`${req.path + "index.html"}`).then(content => {
 					res.writeHead(200, {"Content-Type": mimetype});
 					res.write(content);
 					res.end();
-				}).catch(err => {
-					res.writeHead(200, {"Content-Type": "text/html"});
-					res.write(`${err.message}`);
-					res.end();
-				});
+				}).catch(err => showErrorPage(err));
 			} else {
 				fs.readDir(req.path).then(dirList => dirList.sort(new Intl.Collator().compare)).then(async dirList => {
 					const UAString = req.headers["user-agent"];
