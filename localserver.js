@@ -13,7 +13,7 @@ fs.read = util.promisify(fs.read).bind(fs);
 fs.open = util.promisify(fs.open).bind(fs);
 childProcess.exec = util.promisify(childProcess.exec).bind(childProcess);
 
-const buffer = new Buffer.alloc(1024);
+const buffer = new Buffer.alloc(256);
 
 const host = require("./host.js");
 const app = {
@@ -167,12 +167,10 @@ window.addEventListener("DOMContentLoaded", event => {
 						res.write(`<li class="dir hidden"><a href="${href[dirname]}/">${dirname}</a></li>\n`);
 					}
 					for (filename of files) {
-						mimetype = mime.lookup(filename); // check mimetype from filename extension
-						if (stats[filename].size === 0) mimetype = "application/x-empty";
+						mimetype = mime.lookup(filename);
 						if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable";
 						if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload";
 						if (!mimetype && href[filename] && stats[filename]) {
-							// if none, read some bytes from the file
 							mimetype = await fs.open(href[filename]).then(async fd => {
 								return await fs.read(fd, buffer, 0, buffer.length, 0).then(output => { fs.close(fd);
 									return output.buffer.slice(0, output.bytesRead).toString();
@@ -183,7 +181,7 @@ window.addEventListener("DOMContentLoaded", event => {
 									   str.indexOf("\0") === -1 ? "text/plain" :
 									   stats[filename].isExec ? "application/x-executable" : "application/octet-stream";
 							}).catch(() => {
-								return "unknown"; // if file is undreadable, mimetype is unknown.
+								return "unknown";
 							});
 						}
 						if (!IconPath[mimetype]) {
@@ -198,12 +196,14 @@ window.addEventListener("DOMContentLoaded", event => {
 					for (filename of files_hidden) {
 						mimetype = mime.lookup(filename);
 						if (!mimetype && href[filename]) {
-							mimetype = await fs.open(href[filename]).then(fd => {
-								return fs.read(fd, buffer).then(output => { fs.close(fd);
-									return output.buffer.slice(0, output.bytesRead).toString()
+							mimetype = await fs.open(href[filename]).then(async fd => {
+								return await fs.read(fd, buffer, 0, buffer.length, 0).then(output => { fs.close(fd);
+									return output.buffer.slice(0, output.bytesRead).toString();
 								});
 							}).then(str => {
 								return str.indexOf("\0") === -1 ? "text/plain" : "application/octet-stream";
+							}).catch(() => {
+								return "unknown";
 							});
 						}
 						if (!IconPath[mimetype]) {
@@ -221,7 +221,7 @@ window.addEventListener("DOMContentLoaded", event => {
 </html>`)
 					res.end();
 				}).catch(err => {
-					if (err.path.endsWith("/")) {
+					if (err.path && err.path.endsWith("/")) {
 						showErrorPage(err);
 					} else {
 						console.error(err.message);
