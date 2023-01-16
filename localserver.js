@@ -206,7 +206,7 @@ window.addEventListener("DOMContentLoaded", event => {
 							IconPath[mimetype] = await iconPath(mimetype);
 						}
 						if (IconPath[mimetype]) {
-							res.write(`<li class="file hidden" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}">${filename}</a></li>\n`);
+							res.write(`<li class="file hidden" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}" data-filesize="${stats[filename].size}" data-lastmod="${stats[filename].mtime}">${filename}</a></li>\n`);
 						} else {
 							res.write(`<li class="file hidden"><a href="${href[filename]}">${filename}</a></li>\n`);
 						}
