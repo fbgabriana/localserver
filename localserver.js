@@ -35,8 +35,7 @@ const server = http.createServer(async (req, res) => {
 		if (fs.statSync(fs.realpathSync(req.path)).isDirectory()) {
 			if (req.path.charAt(req.path.length - 1) !== "/") {
 				res.writeHead(307, {"Location": `${req.path}/`});
-				res.end();
-				return;
+				return res.end();
 			}
 			if (fs.existsSync(req.path + "index.html")) {
 				fs.readFile(`${req.path + "index.html"}`).then(content => {
