@@ -184,7 +184,7 @@ window.addEventListener("DOMContentLoaded", event => {
 							IconPath[mimetype] = await iconPath(mimetype);
 						}
 						if (IconPath[mimetype]) {
-							res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}" data-filesize="${stats[filename].size}" data-lastmod="${stats[filename].mtime}">${filename}</a></li>\n`);
+							res.write(`<li class="file" style="background-image: url(${IconPath[mimetype]})"><a href="${href[filename]}" data-mimetype="${mimetype}" data-filesize="${stats[filename].size}" data-lastmod="${stats[filename].mtime.toLocaleString()}">${filename}</a></li>\n`);
 						} else {
 							res.write(`<li class="file"><a href="${href[filename]}">${filename}</a></li>\n`);
 						}
@@ -325,15 +325,15 @@ window.addEventListener("DOMContentLoaded", event => {
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="light dark">
-<title>Internal server error</title>
+<title>Problem loading page</title>
 <link rel="stylesheet" href="chrome://browser/skin/aboutNetError.css" type="text/css" media="all" />
 <link rel="icon" id="favicon" href="chrome://global/skin/icons/error.svg" />
 </head>
 <body>
 <div id="errorPageContainer" class="container">
-<div class="title"><h1 class="title-text">An error has occurred</h1></div>
+<div class="title"><h1 class="title-text">Unexpected error</h1></div>
 <div id="errorShortDesc">
-<p id="errorShortDescText">An unexpected error occurred while trying to display <strong>${host}${req.path}</strong>.</p>
+<p id="errorShortDescText">An unexpected error occurred while trying to open <strong>${host}${req.path}</strong>.</p>
 </div>
 <div id="errorLongDesc">
 <p id="errorLongDescText">The system provided the following error message:</p>
