@@ -14,14 +14,9 @@ fs.open = util.promisify(fs.open).bind(fs);
 childProcess.exec = util.promisify(childProcess.exec).bind(childProcess);
 
 const buffer = new Buffer.alloc(256);
-
-const host = require("./host.js");
-const app = {
-	versionString: `${process.env.npm_package_name}-${process.env.npm_package_version}`,
-	homepage: `http://${host}`,
-}
 const IconPath = Object.create(null);
 
+const host = require("./host.js");
 const server = http.createServer(async (req, res) => {
 
 	let mimetype = mime.lookup(req.url);
@@ -136,7 +131,7 @@ window.addEventListener("DOMContentLoaded", event => {
 						strGoUp = "Up one level"
 					}
 					if (req.path !== "/") {
-						res.write(`<p id="UI_goUp"><a class="up" href="${app.homepage}${path.split("/").slice(0, -2).join("/")}/">${strGoUp}</a></p>\n`);
+						res.write(`<p id="UI_goUp"><a class="up" href="${path.split("/").slice(0, -2).join("/")}/">${strGoUp}</a></p>\n`);
 					}
 					res.write(`<p id="UI_showHidden" style="display: none;"><label><input type="checkbox">Show hidden items</label></p>\n`);
 					res.write(`</nav>\n`);
@@ -354,6 +349,6 @@ window.addEventListener("DOMContentLoaded", event => {
 	process.stdout.write("\x1bc");
 	console.log("\x1b[36m%s\x1b[0m",`[app] Local server started ${new Date().toLocaleString()}`, "\x1b[0m");
 	console.log("\x1b[36m%s\x1b[0m",`[app] Running at ${socketAddress.address} over ${socketAddress.port}...`, "\x1b[0m");
-	console.log("\x1b[34m%s\x1b[0m",`[app] ${app.homepage}${process.env.HOME}/\x1b[0m`, "\x1b[0m");
+	console.log("\x1b[34m%s\x1b[0m",`[app] ${host.protocol}${host}${process.env.HOME}/\x1b[0m`, "\x1b[0m");
 });
 
