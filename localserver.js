@@ -161,8 +161,6 @@ window.addEventListener("DOMContentLoaded", event => {
 						mimetype = mime.lookup(filename);
 						if (filename.toLowerCase().endsWith(".exe")) mimetype = "application/x-ms-dos-executable";
 						if (filename.toLowerCase().endsWith(".dll")) mimetype = "application/x-msdownload";
-						if (filename.toLowerCase().endsWith(".sh")) mimetype = "application/x-shellscript";
-						if (filename.toLowerCase().endsWith(".pl")) mimetype = "application/x-perl";
 						if (!mimetype && href[filename] && stats[filename]) {
 							mimetype = await fs.open(href[filename]).then(async fd => {
 								return await fs.read(fd, buffer, 0, buffer.length, 0).then(output => { fs.close(fd);
