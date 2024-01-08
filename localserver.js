@@ -243,7 +243,7 @@ window.addEventListener("DOMContentLoaded", event => {
 	}
 
 	const showErrorPage = err => {
-		const zenity = "zenity";
+		const zenity = "true";
 		switch (err.code) {
 		case "ENOENT":
 			childProcess.exec(`${zenity} --info --text='<b>Could not find "${req.path}".</b>\n\nPlease check the spelling and try again.' --no-wrap`).catch(exit => {
