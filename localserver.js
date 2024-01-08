@@ -274,7 +274,6 @@ window.addEventListener("DOMContentLoaded", event => {
 </html>`);
 			res.end();
 			}).finally(() => {
-			console.error(err.message);
 			res.writeHead(204, {"Content-Type": mimetype});
 			res.end();
 			});
@@ -308,13 +307,11 @@ window.addEventListener("DOMContentLoaded", event => {
 </html>`);
 			res.end();
 			}).finally(() => {
-			console.error(err.message);
 			res.writeHead(204, {"Content-Type": mimetype});
 			res.end();
 			});
 			break;
 		default:
-			console.error(`\x1b[31m${err.message}\x1b[0m`);
 			res.writeHead(500, {"Content-Type": "text/html"});
 			res.write(`<!DOCTYPE html>
 <html lang="en">
@@ -341,6 +338,8 @@ window.addEventListener("DOMContentLoaded", event => {
 </html>`);
 			res.end();
 		}
+		console.error(err.message);
+		childProcess.exec("notify-send -i " + "$(realpath icons/error.png)" + " -t 2000 Error " + "'" + err.message + "'")
 	}
 }).listen(host.port, host.hostname).on("error", err => {
 	console.error(`\x1b[31m${err.message}\x1b[0m`);
