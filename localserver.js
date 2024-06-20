@@ -352,3 +352,5 @@ window.addEventListener("DOMContentLoaded", event => {
 	console.log("\x1b[34m%s\x1b[0m",`[app] ${host.protocol}${host}${process.env.HOME}/\x1b[0m`, "\x1b[0m");
 });
 
+
+
